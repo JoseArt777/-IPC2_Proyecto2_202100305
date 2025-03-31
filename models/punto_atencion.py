@@ -61,25 +61,29 @@ class PuntoAtencion:
         
         return False
     
-    def desactivar_escritorio(self, id_escritorio):
+    def desactivar_escritorio(self):
         """
-        Desactiva un escritorio para que no atienda más clientes.
+        Desactiva el último escritorio activado siguiendo la lógica LIFO.
         
-        Args:
-            id_escritorio (str): ID del escritorio a desactivar
-            
         Returns:
-            bool: True si se desactivó correctamente, False si no se encontró o ya estaba inactivo
+            bool: True si se desactivó correctamente, False si no hay escritorios activos
         """
+        if self.escritorios_activos.esta_vacia():
+            return False
+        
+        # Obtener el último escritorio activado (LIFO)
+        ultimo_escritorio = None
         for escritorio in self.escritorios_activos:
-            if escritorio.id == id_escritorio and escritorio.activo:
-                escritorio.desactivar()
-                
-                # Eliminar de la lista de activos (cuando termine con el cliente actual)
-                if escritorio.cliente_actual is None:
-                    self.escritorios_activos.eliminar(escritorio)
-                
-                return True
+            ultimo_escritorio = escritorio
+        
+        if ultimo_escritorio:
+            ultimo_escritorio.desactivar()
+            
+            # Eliminar de la lista de activos (cuando termine con el cliente actual)
+            if ultimo_escritorio.cliente_actual is None:
+                self.escritorios_activos.eliminar(ultimo_escritorio)
+            
+            return True
         
         return False
     

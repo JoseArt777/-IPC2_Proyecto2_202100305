@@ -615,40 +615,22 @@ class MainWindow:
     
     def desactivar_escritorio(self):
         """
-        Desactiva un escritorio de servicio en el punto de atención actual.
+        Desactiva el último escritorio de servicio activado en el punto de atención actual (LIFO).
         """
         if not self.sistema.punto_actual:
             messagebox.showerror("Error", "No hay punto de atención seleccionado.")
             return
         
-        # Obtener escritorios activos
-        escritorios_activos = []
-        for escritorio in self.sistema.punto_actual.escritorios:
-            if escritorio.activo:
-                escritorios_activos.append(f"{escritorio.identificacion} (ID: {escritorio.id})")
-        
-        if not escritorios_activos:
+        # Verificar si hay escritorios activos
+        if len(self.sistema.punto_actual.escritorios_activos) == 0:
             messagebox.showinfo("Desactivar Escritorio", "No hay escritorios activos para desactivar.")
             return
         
-        # Seleccionar escritorio a desactivar
-        escritorio_seleccionado = simpledialog.askstring(
-            "Desactivar Escritorio",
-            "Seleccione el escritorio a desactivar:",
-            initialvalue=escritorios_activos[0] if escritorios_activos else ""
-        )
-        
-        if escritorio_seleccionado is None or escritorio_seleccionado not in escritorios_activos:
-            return
-        
-        # Extraer ID del escritorio
-        id_escritorio = escritorio_seleccionado.split("ID: ")[1].rstrip(")")
-        
-        # Desactivar el escritorio
-        if self.sistema.desactivar_escritorio(id_escritorio):
-            messagebox.showinfo("Desactivar Escritorio", f"Escritorio desactivado correctamente. No atenderá más clientes después de finalizar al cliente actual.")
+        # Desactivar el último escritorio activado (LIFO)
+        if self.sistema.desactivar_escritorio():
+            messagebox.showinfo("Desactivar Escritorio", "Escritorio desactivado correctamente. No atenderá más clientes después de finalizar al cliente actual.")
             self.ver_estado_punto()
-            self.barra_estado.config(text=f"Escritorio {id_escritorio} desactivado")
+            self.barra_estado.config(text="Escritorio desactivado (LIFO)")
         else:
             messagebox.showerror("Error", "No se pudo desactivar el escritorio.")
     

@@ -8,20 +8,11 @@ class GraphvizUtils:
     
     @staticmethod
     def generar_grafico_cola_clientes(punto_atencion, ruta_salida):
-        """
-        Genera un gráfico de la cola de clientes en espera.
         
-        Args:
-            punto_atencion: Punto de atención con la cola de clientes
-            ruta_salida (str): Ruta donde guardar el archivo de imagen
-            
-        Returns:
-            bool: True si se generó correctamente, False de lo contrario
-        """
         try:
             # Crear archivo DOT
             dot_path = ruta_salida.replace('.png', '.dot')
-            with open(dot_path, 'w') as dot_file:
+            with open(dot_path, 'w', encoding='utf-8') as dot_file:
                 dot_file.write('digraph ColaClientes {\n')
                 dot_file.write('  rankdir=LR;\n')
                 dot_file.write('  node [shape=record, style=filled, fillcolor=lightblue];\n')
