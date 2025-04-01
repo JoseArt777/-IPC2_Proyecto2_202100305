@@ -68,7 +68,8 @@ class VentanaPrincipal:
         ttk.Button(frame_ops_empresa, text="Ver Detalles", command=self.ver_detalles_empresa).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame_ops_empresa, text="Crear Punto de Atención", command=self.crear_punto_atencion).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame_ops_empresa, text="Crear Transacción", command=self.crear_transaccion).pack(side=tk.LEFT, padx=5)
-    
+        ttk.Button(frame_ops_empresa, text="Crear Escritorio", command=self.crear_escritorio).pack(side=tk.LEFT, padx=5)
+
     def setup_tab_puntos(self):
         # Marco para selección de empresa y punto
         frame_seleccion = ttk.LabelFrame(self.tab_puntos, text="Selección")
@@ -284,6 +285,71 @@ class VentanaPrincipal:
         # Hacer que el grid sea expansible
         dialog.columnconfigure(1, weight=1)
     
+    def crear_escritorio(self):
+        seleccion = self.tree_empresas.selection()
+        if not seleccion:
+            messagebox.showwarning("Advertencia", "Por favor, seleccione una empresa.")
+            return
+
+        id_empresa = seleccion[0]
+        empresa = self.sistema.obtener_empresa(id_empresa)
+        if not empresa:
+            messagebox.showerror("Error", "La empresa seleccionada no está disponible.")
+            return
+
+        if not empresa.puntos_atencion:
+            messagebox.showwarning("Advertencia", "La empresa no tiene puntos de atención.")
+            return
+
+        # Diálogo para seleccionar el punto de atención
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Crear Escritorio")
+        dialog.geometry("400x300")
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Seleccionar Punto de Atención:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        combo_puntos = ttk.Combobox(dialog, state="readonly")
+        puntos = [p.nombre for p in empresa.puntos_atencion]
+        ids_puntos = [p.id for p in empresa.puntos_atencion]
+        combo_puntos['values'] = puntos
+        combo_puntos.grid(row=0, column=1, padx=5, pady=5)
+        combo_puntos.current(0)
+
+        ttk.Label(dialog, text="ID Escritorio:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        id_var = tk.StringVar()
+        ttk.Entry(dialog, textvariable=id_var).grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(dialog, text="Identificación:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        ident_var = tk.StringVar()
+        ttk.Entry(dialog, textvariable=ident_var).grid(row=2, column=1, padx=5, pady=5)
+
+        ttk.Label(dialog, text="Encargado:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        encargado_var = tk.StringVar()
+        ttk.Entry(dialog, textvariable=encargado_var).grid(row=3, column=1, padx=5, pady=5)
+
+        def guardar():
+            idx = combo_puntos.current()
+            id_punto = ids_puntos[idx]
+            punto = empresa.obtener_punto_atencion(id_punto)
+
+            id_esc = id_var.get().strip()
+            ident = ident_var.get().strip()
+            encargado = encargado_var.get().strip()
+
+            if not id_esc or not ident or not encargado:
+                messagebox.showerror("Error", "Todos los campos son obligatorios.", parent=dialog)
+                return
+
+            from modelo import EscritorioServicio
+            nuevo = EscritorioServicio(id_esc, ident, encargado)
+            punto.agregar_escritorio(nuevo)
+
+            messagebox.showinfo("Éxito", f"Escritorio '{ident}' agregado a '{punto.nombre}'.", parent=dialog)
+            dialog.destroy()
+
+        ttk.Button(dialog, text="Guardar", command=guardar).grid(row=4, column=0, padx=5, pady=10)
+        ttk.Button(dialog, text="Cancelar", command=dialog.destroy).grid(row=4, column=1, padx=5, pady=10)
+
     def actualizar_empresas(self):
         """
         Actualiza la lista de empresas en el combo y en el árbol.
