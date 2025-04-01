@@ -12,6 +12,8 @@ class VentanaPrincipal:
         self.root = root
         self.root.title("Sistema de Atención a Clientes")
         self.root.geometry("1000x700")
+        self.root.configure(bg="#f7f9f9")
+
         
         self.sistema = SistemaAtencion()
         self.procesador = ProcesadorXML(self.sistema)
@@ -32,6 +34,29 @@ class VentanaPrincipal:
         self.tab_puntos = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_puntos, text="Manejo de Puntos de Atención")
         self.setup_tab_puntos()
+
+        style = ttk.Style()
+        style.theme_use("clam")  # Puedes probar también 'alt', 'default' o 'vista'
+
+        # Estilo de botones
+        style.configure("TButton", font=("Segoe UI", 10), padding=6, foreground="white", background="#2c3e50")
+        style.map("TButton",
+            background=[("active", "#34495e"), ("disabled", "#bdc3c7")],
+            foreground=[("disabled", "#ecf0f1")]
+        )
+
+        # Estilo de labels y frames
+        style.configure("TLabel", font=("Segoe UI", 10), foreground="#2c3e50")
+        style.configure("TLabelframe.Label", font=("Segoe UI", 11, "bold"), foreground="#2980b9")
+        style.configure("TLabelframe", background="#ecf0f1")
+
+        # Estilo de Combobox
+        style.configure("TCombobox", padding=4)
+
+        # Treeview
+        style.configure("Treeview", font=("Segoe UI", 9), rowheight=24, fieldbackground="white")
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), background="#2980b9", foreground="white")
+
     
     def setup_tab_config(self):
         # Marco para operaciones de configuración
