@@ -1,11 +1,11 @@
-# Nodo básico para listas enlazadas
+# Nodo para listas enlazadas
 class Nodo:
     def __init__(self, dato=None):
         self.dato = dato
         self.siguiente = None
-        self.anterior = None  # Para listas doblemente enlazadas
+        self.anterior = None 
 
-# Lista enlazada simple
+# Lista simplemente enlazada
 class ListaEnlazada:
     def __init__(self):
         self.cabeza = None
@@ -52,7 +52,6 @@ class ListaEnlazada:
         return dato
     
     def buscar(self, criterio, valor):
-        """Busca un elemento basado en un criterio y valor específico"""
         actual = self.cabeza
         while actual:
             if getattr(actual.dato, criterio, None) == valor:
@@ -69,7 +68,7 @@ class ListaEnlazada:
     def __len__(self):
         return self.tamaño
 
-# Cola (Queue) implementada con lista enlazada
+# Cola con lista enlazada
 class Cola:
     def __init__(self):
         self.lista = ListaEnlazada()
@@ -92,7 +91,7 @@ class Cola:
     def __len__(self):
         return len(self.lista)
 
-# Pila (Stack) implementada con lista enlazada
+# Pila implementada con lista enlazada
 class Pila:
     def __init__(self):
         self.tope = None
@@ -125,7 +124,7 @@ class Pila:
     def __len__(self):
         return self.tamaño
 
-# Tabla Hash simplificada (para reemplazar diccionarios)
+# Tabla Hash  (reemplazamos con esto los diccionarios)
 class TablaHash:
     def __init__(self, tamaño=100):
         self.tabla = [None] * tamaño
@@ -133,9 +132,8 @@ class TablaHash:
         self.elementos = 0
     
     def _hash(self, clave):
-        # Función hash simple para strings y números
+        #  para strings y números
         if isinstance(clave, str):
-            # Sumar valores ASCII de caracteres
             valor = sum(ord(c) for c in clave)
         else:
             valor = int(clave)
@@ -156,11 +154,10 @@ class TablaHash:
                 return
             actual = actual.siguiente
         
-        # Si no existe, insertarla
+        # Si no existe, se inserta
         self.tabla[indice].insertar((clave, valor))
         self.elementos += 1
         
-        # Verificar si es necesario redimensionar
         if self.elementos > self.tamaño * 0.7:
             self._redimensionar()
     

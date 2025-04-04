@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Añadir la carpeta raíz del proyecto al PYTHONPATH
+# se agrega la ruta del directorio actual
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import tkinter as tk

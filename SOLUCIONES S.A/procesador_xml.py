@@ -21,10 +21,9 @@ class ProcesadorXML:
                 nombre = empresa_elem.find('nombre').text.strip()
                 abreviatura = empresa_elem.find('abreviatura').text.strip()
                 
-                # Crear empresa
+                # crea una empresa
                 empresa = Empresa(id_empresa, nombre, abreviatura)
                 
-                # Procesar puntos de atención
                 puntos_atencion_elem = empresa_elem.find('listaPuntosAtencion')
                 if puntos_atencion_elem is not None:
                     for punto_elem in puntos_atencion_elem.findall('puntoAtencion'):
@@ -35,7 +34,6 @@ class ProcesadorXML:
                         # Crear punto de atención
                         punto = PuntoAtencion(id_punto, nombre_punto, direccion)
                         
-                        # Procesar escritorios
                         escritorios_elem = punto_elem.find('listaEscritorios')
                         if escritorios_elem is not None:
                             for escritorio_elem in escritorios_elem.findall('escritorio'):
@@ -49,7 +47,6 @@ class ProcesadorXML:
                         
                         empresa.agregar_punto_atencion(punto)
                 
-                # Procesar transacciones
                 transacciones_elem = empresa_elem.find('listaTransacciones')
                 if transacciones_elem is not None:
                     for transaccion_elem in transacciones_elem.findall('transaccion'):
@@ -87,7 +84,7 @@ class ProcesadorXML:
                 id_empresa = config_elem.get('idEmpresa')
                 id_punto = config_elem.get('idPunto')
                 
-                # Obtener la empresa y punto de atención
+                # Obtiene la empresa y punto de atención
                 empresa = self.sistema.obtener_empresa(id_empresa)
                 if empresa is None:
                     continue
@@ -96,24 +93,23 @@ class ProcesadorXML:
                 if punto is None:
                     continue
                 
-                # Activar escritorios iniciales
+                # Activa los escritorios iniciales
                 escritorios_elem = config_elem.find('escritoriosActivos')
                 if escritorios_elem is not None:
                     for escritorio_elem in escritorios_elem.findall('escritorio'):
                         id_escritorio = escritorio_elem.get('idEscritorio')
                         punto.activar_escritorio(id_escritorio)
                 
-                # Procesar clientes iniciales
                 clientes_elem = config_elem.find('listadoClientes')
                 if clientes_elem is not None:
                     for cliente_elem in clientes_elem.findall('cliente'):
                         dpi = cliente_elem.get('dpi')
                         nombre = cliente_elem.find('nombre').text.strip()
                         
-                        # Crear cliente
+                        # Crea un cliente
                         cliente = Cliente(dpi, nombre)
                         
-                        # Agregar transacciones al cliente
+                        # Agrega transacciones al cliente
                         transacciones_elem = cliente_elem.find('listadoTransacciones')
                         if transacciones_elem is not None:
                             for trans_elem in transacciones_elem.findall('transaccion'):
@@ -130,7 +126,7 @@ class ProcesadorXML:
                 
                 configuraciones_cargadas += 1
             
-            # Asignar clientes iniciales a escritorios disponibles
+            # Asigna clientes iniciales a escritorios disponibles
             for empresa in self.sistema.empresas.valores():
                 for punto in empresa.puntos_atencion:
                     punto.asignar_clientes()

@@ -197,35 +197,49 @@ class SistemaAtencion:
     
     def generar_dot_escritorios(self):
         """
-        Genera un diagrama de Graphviz para visualizar los escritorios de servicio.
+        Genera un diagrama de Graphviz para visualizar los escritorios de servicio,
+        incluyendo tiempos de atención por escritorio.
         """
         if not self.punto_actual:
             return ""
-        
+
+        import graphviz
         dot = graphviz.Digraph(comment='Escritorios de Servicio')
-        
-        # Agregar nodo para el punto de atención
+
+        # Nodo principal del punto
         dot.node('punto', f'Punto de Atención: {self.punto_actual.nombre}', shape='box')
-        
-        # Agregar nodos para los escritorios
-        for escritorio in self.punto_actual.escritorios:
+
+        # Nodos de escritorios
+        for idx, escritorio in enumerate(self.punto_actual.escritorios):
             estado = "Inactivo"
             color = "lightgrey"
-            cliente_info = ""  # Inicializar cliente_info para todos los casos
-            
+            cliente_info = ""
+            tiempos_info = ""
+
             if escritorio.estado == escritorio.ACTIVO:
                 estado = "Activo"
                 color = "lightgreen"
             elif escritorio.estado == escritorio.OCUPADO:
                 estado = "Ocupado"
                 color = "orange"
-                cliente_info = f"\\nCliente: {escritorio.cliente_actual.nombre}\\nTiempo restante: {escritorio.tiempo_restante} min"
-            
-            label = f"Escritorio: {escritorio.identificacion}\\nEncargado: {escritorio.encargado}\\nEstado: {estado}{cliente_info}"
-            dot.node(f'escritorio_{escritorio.id}', label, shape='box', style='filled', fillcolor=color)
-            dot.edge('punto', f'escritorio_{escritorio.id}')
-        
+                if escritorio.cliente_actual:
+                    cliente_info = f"Cliente: {escritorio.cliente_actual.nombre}\\n"
+                    tiempos_info += f"Tiempo restante: {escritorio.tiempo_restante} min\\n"
+
+            if escritorio.clientes_atendidos > 0:
+                tiempo_prom = escritorio.tiempo_promedio_atencion()
+                tiempo_min = escritorio.tiempo_min_atencion if escritorio.tiempo_min_atencion != float('inf') else 0
+                tiempo_max = escritorio.tiempo_max_atencion
+                tiempos_info += f"Prom: {tiempo_prom:.1f} min\\nMin: {tiempo_min} min | Max: {tiempo_max} min"
+
+            etiqueta = f"{escritorio.identificacion}\\nEstado: {estado}\\n{cliente_info}{tiempos_info}"
+            dot.node(f'escritorio{idx}', etiqueta, style='filled', fillcolor=color)
+
+            # Conexión desde el punto al escritorio
+            dot.edge('punto', f'escritorio{idx}')
+
         return dot.source
+
     
     def generar_dot_cola(self):
         """s

@@ -1,6 +1,5 @@
 import sys
 import os
-# Añadir el directorio raíz del proyecto al path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from estructuras import ListaEnlazada, Cola, TablaHash, Pila
@@ -14,7 +13,7 @@ class Transaccion:
     def __str__(self):
         return f"Transaccion[{self.id}]: {self.nombre} ({self.tiempo_atencion} min)"
 
-# Clase para representar un escritorio de servicio
+# Clase para escritorio de servicio
 class EscritorioServicio:
     INACTIVO = 0
     ACTIVO = 1
@@ -30,7 +29,7 @@ class EscritorioServicio:
         self.pendiente_desactivar = False  # Añadir esta línea
 
         
-        # Estadísticas
+        # Estadística
         self.clientes_atendidos = 0
         self.tiempo_total_atencion = 0
         self.tiempo_min_atencion = float('inf')
@@ -110,7 +109,7 @@ class EscritorioServicio:
             
         return f"Escritorio[{self.id}]: {self.identificacion} ({estado_str}) - Cliente: {cliente_str}"
 
-# Clase para representar un punto de atención
+# Clase punto de atención
 
 class PuntoAtencion:
     def __init__(self, id_punto, nombre, direccion):
@@ -119,8 +118,8 @@ class PuntoAtencion:
         self.direccion = direccion
         self.escritorios = ListaEnlazada()
         self.cola_clientes = Cola()
-        self.pila_escritorios_activos = Pila()  # <- añade esta línea
-        self.siguiente_indice_activar = 0  # <-- Añadir esto claramente
+        self.pila_escritorios_activos = Pila()  
+        self.siguiente_indice_activar = 0 
 
 
         # Estadísticas (no cambian)
@@ -154,17 +153,13 @@ class PuntoAtencion:
         """
         Desactiva el último escritorio activado (LIFO)
         """
-        # Si no hay escritorios activos en la pila, verificar si hay alguno activo directamente
         if self.pila_escritorios_activos.esta_vacia():
-            # Buscar manualmente si hay algún escritorio activo (por si la pila está desincronizada)
             for escritorio in self.escritorios:
                 if escritorio.estado == escritorio.ACTIVO or escritorio.estado == escritorio.OCUPADO:
-                    # Si encontramos uno, intentamos desactivarlo
                     escritorio.desactivar()
                     return escritorio
-            return None  # No hay escritorios activos
+            return None  
 
-        # Crear una pila temporal para mantener escritorios mientras buscamos
         temp_pila = Pila()
         escritorio_desactivado = None
 
@@ -172,12 +167,11 @@ class PuntoAtencion:
         while not self.pila_escritorios_activos.esta_vacia():
             escritorio = self.pila_escritorios_activos.desapilar()
             
-            # Si el escritorio ya está inactivo, es una inconsistencia, no lo reinsertamos
             if escritorio.estado == escritorio.INACTIVO:
                 continue
                 
-            # Si podemos desactivarlo
-            escritorio.desactivar()  # Intentar desactivar (cambia estado o marca pendiente)
+            # Si se puede desactivar
+            escritorio.desactivar()  # desactivar el escritorio
             escritorio_desactivado = escritorio
             break
             
@@ -210,9 +204,9 @@ class PuntoAtencion:
         return False
     
     def encolar_cliente(self, cliente):
-        cliente.hora_llegada = 0  # Se actualizará durante la simulación
+        cliente.hora_llegada = 0 
         self.cola_clientes.encolar(cliente)
-        return len(self.cola_clientes)  # Retorna la posición en la cola
+        return len(self.cola_clientes) 
     
     def asignar_clientes(self):
         clientes_asignados = 0
@@ -227,7 +221,7 @@ class PuntoAtencion:
                 cliente = self.cola_clientes.desencolar()
                 
                 # Registrar estadísticas de espera
-                tiempo_espera = 0  # En una simulación real, se calcula con timestampss
+                tiempo_espera = 0  
                 self.tiempo_total_espera += tiempo_espera
                 self.clientes_atendidos += 1
                 
@@ -244,9 +238,7 @@ class PuntoAtencion:
         return clientes_asignados
     
     def atender_cliente(self):
-        """
-        Completa la atención del cliente que está más próximo a terminar.
-        """
+     
         # Buscar el escritorio con menor tiempo restante
         escritorio_min = None
         tiempo_min = float('inf')
@@ -259,7 +251,6 @@ class PuntoAtencion:
         # Si encontramos un escritorio ocupado, completar la atención
         if escritorio_min:
             escritorio_min.completar_atencion()
-            # Intentar asignar un nuevo cliente
             self.asignar_clientes()
             return True
         
@@ -269,10 +260,8 @@ class PuntoAtencion:
         """
         Simula la atención de todos los clientes pendientes.
         """
-        # Primero asignar clientes a todos los escritorios disponibles
         self.asignar_clientes()
         
-        # Iterar hasta que no haya más clientes pendientes o en atención
         iteraciones = 0
         clientes_atendidos_total = 0
         
@@ -282,12 +271,11 @@ class PuntoAtencion:
                 if escritorio.estado == EscritorioServicio.OCUPADO:
                     escritorio.actualizar_tiempo(1)
             
-            # Asignar nuevos clientes si hay escritorios disponibles
+            # Asigna nuevos clientes si hay escritorios disponibles
             self.asignar_clientes()
             
             iteraciones += 1
-            # Evitar bucles infinitos
-            if iteraciones > 1000:  # Límite arbitrario para evitar bucles infinitos
+            if iteraciones > 1000: # Evitar bucle infinito
                 break
         
         return clientes_atendidos_total
@@ -315,7 +303,7 @@ class PuntoAtencion:
         if self.clientes_atendidos > 0:
             tiempo_promedio_espera = self.tiempo_total_espera / self.clientes_atendidos
         
-        # Calcular promedio de tiempo de atención
+        # Cálculo de tiempos de atención
         tiempo_total_atencion = 0
         tiempo_min_atencion = float('inf')
         tiempo_max_atencion = 0
@@ -352,7 +340,7 @@ class PuntoAtencion:
     def __str__(self):
         return f"PuntoAtencion[{self.id}]: {self.nombre} - {self.direccion}"
 
-# Clase para representar una empresa
+# Clase que representa una empresa
 class Empresa:
     def __init__(self, id_empresa, nombre, abreviatura):
         self.id = id_empresa
@@ -379,13 +367,13 @@ class Empresa:
     def __str__(self):
         return f"Empresa[{self.id}]: {self.nombre} ({self.abreviatura})"
 
-# Clase para representar un cliente
+# Clase que representa un cliente
 class Cliente:
     def __init__(self, dpi, nombre):
         self.dpi = dpi
         self.nombre = nombre
-        self.transacciones = ListaEnlazada()  # Lista de tuplas (transaccion, cantidad)
-        self.hora_llegada = 0  # Para cálculos de tiempo de espera
+        self.transacciones = ListaEnlazada() 
+        self.hora_llegada = 0 
     
     def agregar_transaccion(self, transaccion, cantidad=1):
         self.transacciones.insertar((transaccion, cantidad))
