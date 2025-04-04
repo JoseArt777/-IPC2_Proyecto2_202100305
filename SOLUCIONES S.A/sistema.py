@@ -266,3 +266,251 @@ class SistemaAtencion:
             nodo_anterior = f'cliente_{i}'
         
         return dot.source
+    def guardar_tablas_estadisticas(self, directorio="reportes"):
+        """
+        Genera tablas estadísticas con Graphviz que siguen exactamente el formato
+        de las imágenes de referencia y las guarda como archivos de imagen en 
+        el directorio especificado, sobrescribiendo archivos anteriores.
+        
+        Args:
+            directorio (str): Directorio donde se guardarán las imágenes. Si no existe, se creará.
+        
+        Returns:
+            tuple: (bool, str) - (éxito, mensaje)
+        """
+        if not self.punto_actual:
+            return False, "Debe seleccionar un punto de atención primero."
+        
+        import os
+        
+        # Crear directorio si no existe
+        if not os.path.exists(directorio):
+            os.makedirs(directorio)
+        
+        try:
+            # Generar tabla similar a la referencia exacta
+            import graphviz
+            
+            # TABLA 1: Estado del punto de atención (Imagen 1 y 2)
+            dot_estado = graphviz.Digraph(comment='Estado del Punto de Atención')
+            dot_estado.attr(rankdir='TB')
+            
+            # Título principal con fondo celeste
+            dot_estado.attr('node', shape='plaintext')
+            header = f'''<
+            <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" WIDTH="100%">
+                <TR>
+                    <TD BGCOLOR="lightblue" ALIGN="CENTER"><FONT POINT-SIZE="14" FACE="Arial Bold">PUNTO DE ATENCION {self.punto_actual.id}</FONT></TD>
+                </TR>
+            </TABLE>
+            >'''
+            dot_estado.node('header', header)
+            
+            # Obtener estadísticas
+            stats = self.punto_actual.obtener_estadisticas()
+            
+            # Crear tabla principal de estadísticas (formato exacto de las imágenes)
+            main_table = f'''<
+            <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                <TR>
+                    <TD VALIGN="TOP">
+                        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                            <TR>
+                                <TD COLSPAN="2" ALIGN="CENTER">Escritorios</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">Activos</TD>
+                                <TD ALIGN="CENTER">Inactivos</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">{stats['escritorios_activos']}</TD>
+                                <TD ALIGN="CENTER">{stats['escritorios_inactivos']}</TD>
+                            </TR>
+                        </TABLE>
+                    </TD>
+                    <TD ALIGN="CENTER" WIDTH="50"></TD>
+                    <TD VALIGN="TOP">
+                        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                            <TR>
+                                <TD COLSPAN="2" ALIGN="CENTER">Clientes</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">En espera</TD>
+                                <TD ALIGN="CENTER">Atendidos</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">{stats['clientes_en_espera']}</TD>
+                                <TD ALIGN="CENTER">{stats['clientes_atendidos']}</TD>
+                            </TR>
+                        </TABLE>
+                    </TD>
+                    <TD ALIGN="CENTER" WIDTH="50"></TD>
+                    <TD VALIGN="TOP">
+                        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                            <TR>
+                                <TD COLSPAN="3" ALIGN="CENTER">Tiempo de Espera</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">Min</TD>
+                                <TD ALIGN="CENTER">Prom</TD>
+                                <TD ALIGN="CENTER">Máximo</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_min_espera'])}</TD>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_promedio_espera'], 1)}</TD>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_max_espera'])}</TD>
+                            </TR>
+                        </TABLE>
+                    </TD>
+                    <TD ALIGN="CENTER" WIDTH="50"></TD>
+                    <TD VALIGN="TOP">
+                        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                            <TR>
+                                <TD COLSPAN="3" ALIGN="CENTER">Tiempo de Atencion</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">Min</TD>
+                                <TD ALIGN="CENTER">Prom</TD>
+                                <TD ALIGN="CENTER">Max</TD>
+                            </TR>
+                            <TR>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_min_atencion'])}</TD>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_promedio_atencion'])}</TD>
+                                <TD ALIGN="CENTER">{round(stats['tiempo_max_atencion'])}</TD>
+                            </TR>
+                        </TABLE>
+                    </TD>
+                </TR>
+            </TABLE>
+            >'''
+            
+            dot_estado.node('main_table', main_table)
+            dot_estado.edge('header', 'main_table', style='invis')
+            
+            # Tablas para cada escritorio, como en las imágenes
+            escritorios_table = f'''<
+            <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="20">
+                <TR>'''
+            
+            # Añadir cada escritorio activo e inactivo
+            for idx, escritorio in enumerate(self.punto_actual.escritorios):
+                # Determinar color de fondo según si es par o impar
+                bg_color = "#FFD6BA" if idx % 2 == 0 else "#F8C8DC"  # Salmón claro o rosa claro
+                
+                tiempo_prom = escritorio.tiempo_promedio_atencion() if escritorio.clientes_atendidos > 0 else 0
+                tiempo_min = escritorio.tiempo_min_atencion if escritorio.tiempo_min_atencion != float('inf') else 0
+                tiempo_max = escritorio.tiempo_max_atencion
+                
+                escritorios_table += f'''
+                    <TD VALIGN="TOP">
+                        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                            <TR>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER" COLSPAN="4"><FONT POINT-SIZE="12" FACE="Arial Bold">{escritorio.identificacion}</FONT></TD>
+                            </TR>
+                            <TR>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER" COLSPAN="4">Tiempo de Atencion</TD>
+                            </TR>
+                            <TR>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">Min</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">Prom</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">Max</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">Atendidos</TD>
+                            </TR>
+                            <TR>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">{round(tiempo_min)}</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">{round(tiempo_prom)}</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">{round(tiempo_max)}</TD>
+                                <TD BGCOLOR="{bg_color}" ALIGN="CENTER">{escritorio.clientes_atendidos}</TD>
+                            </TR>
+                        </TABLE>
+                    </TD>'''
+                
+            escritorios_table += '''
+                </TR>
+            </TABLE>
+            >'''
+            
+            dot_estado.node('escritorios_table', escritorios_table)
+            dot_estado.edge('main_table', 'escritorios_table', style='invis')
+            
+            # Guardar archivo de imagen para Ver Estado (formato 1 y 2)
+            filename_estado = f"{directorio}/estado_punto_atencion"
+            dot_estado.render(filename_estado, format='png', cleanup=True)
+            
+            
+            # TABLA 3: Simulación de actividad (formato de la imagen 3)
+            dot_simulacion = graphviz.Digraph(comment='Simulación de Actividad')
+            dot_simulacion.attr('node', shape='plaintext')
+            
+            # Título y empresa
+            dot_simulacion.node('titulo', '<Simular Actividad del punto de Atención>', shape='box')
+            empresa_nombre = self.empresa_actual.nombre if self.empresa_actual else "EMPRESA"
+            dot_simulacion.node('empresa', f'<ID-NOMBRE EMPRESA<BR/>{empresa_nombre}>', shape='box')
+            dot_simulacion.node('punto', f'<ID-Nombre Punto de Atención<BR/>{self.punto_actual.nombre}>', shape='box')
+            
+            # Crear tabla de estadísticas (formato de la imagen 3)
+            tabla_info_sim = f'''<
+            <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                <TR>
+                    <TD COLSPAN="2" ALIGN="CENTER">Escritorios</TD>
+                    <TD COLSPAN="2" ALIGN="CENTER">Clientes</TD>
+                    <TD COLSPAN="3" ALIGN="CENTER">Tiempo de Espera</TD>
+                    <TD COLSPAN="3" ALIGN="CENTER">Tiempo de Atencion</TD>
+                </TR>
+                <TR>
+                    <TD ALIGN="CENTER">Activos/habilitados</TD>
+                    <TD ALIGN="CENTER">En uso/ocupados</TD>
+                    <TD ALIGN="CENTER">Atendidos</TD>
+                    <TD ALIGN="CENTER">En espera</TD>
+                    <TD ALIGN="CENTER">Mínimo</TD>
+                    <TD ALIGN="CENTER">Promedio</TD>
+                    <TD ALIGN="CENTER">Máximo</TD>
+                    <TD ALIGN="CENTER">Promedio</TD>
+                    <TD ALIGN="CENTER">Mínimo</TD>
+                    <TD ALIGN="CENTER">Máximo</TD>
+                </TR>
+                <TR>
+                    <TD ALIGN="CENTER">{stats['escritorios_activos']}</TD>
+                    <TD ALIGN="CENTER">{sum(1 for e in self.punto_actual.escritorios if e.estado == e.OCUPADO)}</TD>
+                    <TD ALIGN="CENTER">{stats['clientes_atendidos']}</TD>
+                    <TD ALIGN="CENTER">{stats['clientes_en_espera']}</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_min_espera']:.2f} minutos</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_promedio_espera']:.2f} minutos</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_max_espera']:.2f} minutos</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_promedio_atencion']:.2f} minutos</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_min_atencion']:.2f} minutos</TD>
+                    <TD ALIGN="CENTER">{stats['tiempo_max_atencion']:.2f} minutos</TD>
+                </TR>
+            </TABLE>
+            >'''
+            
+            dot_simulacion.node('tabla_sim', tabla_info_sim)
+            
+            # Conexiones
+            dot_simulacion.edge('titulo', 'empresa')
+            dot_simulacion.edge('empresa', 'punto')
+            dot_simulacion.edge('punto', 'tabla_sim')
+            
+            # Añadir escritorios con flechas verdes como en la imagen 3
+            for i, escritorio in enumerate(self.punto_actual.escritorios):
+                if escritorio.estado != escritorio.INACTIVO:
+                    tiempo_prom = escritorio.tiempo_promedio_atencion() if escritorio.clientes_atendidos > 0 else 0
+                    info = f'ID: {escritorio.id} | Caja {i+1} | Tiempo Promedio: {tiempo_prom:.2f} min | Tiempo Máximo: {escritorio.tiempo_max_atencion:.2f} | Tiempo Mínimo: {escritorio.tiempo_min_atencion if escritorio.tiempo_min_atencion != float("inf") else 0:.2f} | Clientes Atendidos: {escritorio.clientes_atendidos}'
+                    
+                    dot_simulacion.node(f'esc_{i}', f'<{info}>', shape='box', style='filled', fillcolor='lightgreen')
+                    
+                    if i == 0:
+                        # Primera flecha verde curva desde la tabla a la primera caja
+                        dot_simulacion.edge('tabla_sim', f'esc_{i}', color='green', penwidth='2.0')
+                    else:
+                        # Conectar cajas entre sí
+                        dot_simulacion.edge(f'esc_{i-1}', f'esc_{i}', color='green', penwidth='2.0')
+            
+            # Guardar archivo de imagen para Simulación (formato 3)
+            filename_simulacion = f"{directorio}/simulacion_punto_atencion"
+            dot_simulacion.render(filename_simulacion, format='png', cleanup=True)
+            
+            return True, f"Tablas estadísticas generadas y guardadas en '{directorio}'."
+        
+        except Exception as e:
+            return False, f"Error al generar tablas estadísticas: {str(e)}"

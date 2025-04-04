@@ -19,6 +19,38 @@ class VentanaPrincipal:
         self.procesador = ProcesadorXML(self.sistema)
         
         self.setup_ui()
+
+    # Añadir este método a la clase VentanaPrincipal en interfaz_grafica.py
+
+    def guardar_tablas_estadisticas(self):
+        """
+        Genera y guarda tablas estadísticas como archivos de imagen.
+        """
+        if not self.sistema.punto_actual:
+            messagebox.showwarning("Advertencia", "Por favor, seleccione un punto de atención.")
+            return
+        
+        # Solicitar directorio al usuario
+        directorio = filedialog.askdirectory(
+            title="Seleccionar directorio para guardar reportes",
+            initialdir="."
+        )
+        
+        if not directorio:  # Si el usuario cancela la selección
+            return
+        
+        # Generar y guardar tablas estadísticas
+        resultado, mensaje = self.sistema.guardar_tablas_estadisticas(directorio)
+        
+        if resultado:
+            messagebox.showinfo("Éxito", mensaje)
+        else:
+            messagebox.showerror("Error", mensaje)
+
+    # Modificar el método setup_tab_puntos para añadir el botón
+    # Encontrar la sección donde se definen los botones en frame_ops_punto
+    # y añadir el siguiente código después del último botón:
+
     
     def setup_ui(self):
         # Crear notebook para las pestañas
@@ -94,7 +126,6 @@ class VentanaPrincipal:
         ttk.Button(frame_ops_empresa, text="Crear Punto de Atención", command=self.crear_punto_atencion).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame_ops_empresa, text="Crear Transacción", command=self.crear_transaccion).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame_ops_empresa, text="Crear Escritorio", command=self.crear_escritorio).pack(side=tk.LEFT, padx=5)
-
     def setup_tab_puntos(self):
         # Marco para selección de empresa y punto
         frame_seleccion = ttk.LabelFrame(self.tab_puntos, text="Selección")
@@ -116,6 +147,7 @@ class VentanaPrincipal:
         frame_ops_punto = ttk.LabelFrame(self.tab_puntos, text="Operaciones")
         frame_ops_punto.pack(fill=tk.X, padx=10, pady=10)
         
+        ttk.Button(frame_ops_punto, text="Guardar Estadísticas", command=self.guardar_tablas_estadisticas).grid(row=0, column=6, padx=5, pady=5)
         ttk.Button(frame_ops_punto, text="Ver Estado", command=self.ver_estado).grid(row=0, column=0, padx=5, pady=5)
         ttk.Button(frame_ops_punto, text="Activar Escritorio", command=self.activar_escritorio).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(frame_ops_punto, text="Desactivar Escritorio", command=self.desactivar_escritorio).grid(row=0, column=2, padx=5, pady=5)
