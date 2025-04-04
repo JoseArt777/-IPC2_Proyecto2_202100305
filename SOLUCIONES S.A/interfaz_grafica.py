@@ -419,14 +419,16 @@ class VentanaPrincipal:
         ids_empresas = []
         nombres_empresas = []
         
-        for id_empresa, empresa in self.sistema.empresas.items():
-            ids_empresas.append(id_empresa)
-            nombres_empresas.append(f"{empresa.nombre} ({empresa.abreviatura})")
-            
-            num_puntos = len(empresa.puntos_atencion)
-            num_trans = len(empresa.transacciones)
-            
-            self.tree_empresas.insert("", "end", id_empresa, values=(empresa.nombre, empresa.abreviatura, num_puntos, num_trans))
+        for id_empresa in self.sistema.empresas:
+            empresa = self.sistema.empresas.obtener(id_empresa)
+            if empresa:
+                ids_empresas.append(id_empresa)
+                nombres_empresas.append(f"{empresa.nombre} ({empresa.abreviatura})")
+                
+                num_puntos = len(empresa.puntos_atencion)
+                num_trans = len(empresa.transacciones)
+                
+                self.tree_empresas.insert("", "end", id_empresa, values=(empresa.nombre, empresa.abreviatura, num_puntos, num_trans))
         
         # Actualizar combo
         self.combo_empresas['values'] = nombres_empresas
@@ -436,12 +438,33 @@ class VentanaPrincipal:
             self.sistema.seleccionar_empresa(ids_empresas[0])
             self.combo_empresas.current(0)
             self.actualizar_puntos(None)
-    
+        else:
+            self.sistema.empresa_actual = None
+            self.sistema.punto_actual = None
+            self.limpiar_info()
+        
     def actualizar_puntos(self, event):
         """
         Actualiza la lista de puntos de atención en el combo.
         """
-        if not self.sistema.empresa_actual:
+        # Obtener la empresa seleccionada en el combobox
+        index = self.combo_empresas.current()
+        if index < 0:
+            self.combo_puntos['values'] = []
+            self.sistema.empresa_actual = None
+            self.sistema.punto_actual = None
+            return
+        
+        # Obtener todas las empresas y seleccionar la correcta
+        ids_empresas = []
+        for id_empresa in self.sistema.empresas:
+            ids_empresas.append(id_empresa)
+        
+        if index < len(ids_empresas):
+            id_empresa = ids_empresas[index]
+            # Actualizar la empresa_actual en el sistema
+            self.sistema.seleccionar_empresa(id_empresa)
+        else:
             self.combo_puntos['values'] = []
             return
         
@@ -456,13 +479,18 @@ class VentanaPrincipal:
         # Actualizar combo
         self.combo_puntos['values'] = puntos
         
+        # Limpiar información del punto anterior
+        self.limpiar_info()
+        
         # Si hay puntos, seleccionar el primero
         if puntos:
             self.combo_puntos.current(0)
             self.sistema.seleccionar_punto(ids_puntos[0])
+            # Actualizar la vista con el nuevo punto seleccionado
+            self.ver_estado()
         else:
             self.sistema.punto_actual = None
-    
+        
     def seleccionar_punto(self, event):
         """
         Selecciona el punto de atención actual.
@@ -472,6 +500,8 @@ class VentanaPrincipal:
         
         index = self.combo_puntos.current()
         if index < 0:
+            self.sistema.punto_actual = None
+            self.limpiar_info()
             return
         
         # Obtener ID del punto seleccionado
@@ -486,6 +516,11 @@ class VentanaPrincipal:
         
         if id_punto:
             self.sistema.seleccionar_punto(id_punto)
+            # Actualizar la vista con el nuevo punto seleccionado
+            self.ver_estado()
+        else:
+            self.sistema.punto_actual = None
+            self.limpiar_info()
     
     def ver_estado(self):
         """
