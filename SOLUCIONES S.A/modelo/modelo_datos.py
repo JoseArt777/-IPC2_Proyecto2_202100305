@@ -28,7 +28,7 @@ class EscritorioServicio:
         self.cliente_actual = None
         self.tiempo_restante = 0
         self.pendiente_desactivar = False 
-        self.punto_atencion = punto_atencion  # Referencia al punto de atención
+        self.punto_atencion = punto_atencion 
 
 
         
@@ -158,7 +158,6 @@ class PuntoAtencion:
             estado = "Inactivo" if escritorio.estado == escritorio.INACTIVO else "Activo" if escritorio.estado == escritorio.ACTIVO else "Ocupado"
             print(f"Escritorio[{idx}] {escritorio.identificacion}: {estado}")
         
-        # Encontrar el primer escritorio inactivo desde el inicio
         for idx in range(num_escritorios):
             escritorio = self.escritorios.obtener(idx)
             if escritorio and escritorio.estado == escritorio.INACTIVO and not escritorio.pendiente_desactivar:
@@ -173,13 +172,11 @@ class PuntoAtencion:
                     
                     while not self.pila_escritorios_activos.esta_vacia():
                         e = self.pila_escritorios_activos.desapilar()
-                        # Buscar su índice en la lista
                         for i in range(num_escritorios):
                             if self.escritorios.obtener(i).id == e.id:
                                 escritorios_con_indice.append((i, e))
                                 break
                     
-                    # Ordenar por índice (menor a mayor)
                     escritorios_con_indice.sort(key=lambda x: x[0])
                     
                     # Apilar en orden para que mayor índice quede arriba
@@ -195,7 +192,6 @@ class PuntoAtencion:
                         pila_temp.apilar(e)
                     print(f"Estado de la pila (tope -> fondo): {' -> '.join(texto_pila)}")
                     
-                    # Restaurar la pila
                     while not pila_temp.esta_vacia():
                         self.pila_escritorios_activos.apilar(pila_temp.desapilar())
                     
@@ -218,7 +214,6 @@ class PuntoAtencion:
         if self.pila_escritorios_activos.esta_vacia():
             print("La pila está vacía, inicializándola...")
             
-            # Recolectar escritorios activos con su índice
             escritorios_con_indice = []
             for idx in range(len(self.escritorios)):
                 escritorio = self.escritorios.obtener(idx)
@@ -226,15 +221,12 @@ class PuntoAtencion:
                     escritorios_con_indice.append((idx, escritorio))
                     print(f"Agregando a lista: Escritorio {escritorio.identificacion} (índice {idx})")
             
-            # Ordenar explícitamente por índice (menor a mayor)
             escritorios_con_indice.sort(key=lambda x: x[0])
             
-            # Apilar en orden de índice para que el mayor quede arriba
             for idx, escritorio in escritorios_con_indice:
                 self.pila_escritorios_activos.apilar(escritorio)
                 print(f"Apilando: Escritorio {escritorio.identificacion} (índice {idx})")
             
-            # Mostrar estado actual de la pila
             pila_temp = Pila()
             texto_pila = []
             while not self.pila_escritorios_activos.esta_vacia():
@@ -243,36 +235,29 @@ class PuntoAtencion:
                 pila_temp.apilar(e)
             print(f"Estado de la pila (tope -> fondo): {' -> '.join(texto_pila)}")
             
-            # Restaurar la pila
             while not pila_temp.esta_vacia():
                 self.pila_escritorios_activos.apilar(pila_temp.desapilar())
         
-        # Si no hay escritorios activos, retornar None
         if self.pila_escritorios_activos.esta_vacia():
             print("No hay escritorios para desactivar")
             return None
         
-        # Desapilar el tope de la pila
         escritorio = self.pila_escritorios_activos.desapilar()
         print(f"Desapilado: Escritorio {escritorio.identificacion}, Estado: {escritorio.estado}")
         
-        # Si el escritorio ya está inactivo, buscar otro en la pila
         if escritorio.estado == escritorio.INACTIVO:
             print(f"El escritorio {escritorio.identificacion} ya está inactivo, buscando otro")
             if not self.pila_escritorios_activos.esta_vacia():
                 return self.desactivar_escritorio_auto()
             return None
         
-        # Desactivar el escritorio
         escritorio.desactivar()
         print(f"Desactivando: Escritorio {escritorio.identificacion}")
         
-        # Si quedó pendiente de desactivar, volver a apilarlo
         if escritorio.pendiente_desactivar:
             self.pila_escritorios_activos.apilar(escritorio)
             print(f"El escritorio {escritorio.identificacion} quedó pendiente, volviendo a apilar")
         
-        # Mostrar estado actual de la pila después de desactivar
         pila_temp = Pila()
         texto_pila = []
         while not self.pila_escritorios_activos.esta_vacia():
@@ -281,14 +266,13 @@ class PuntoAtencion:
             pila_temp.apilar(e)
         print(f"Estado de la pila después (tope -> fondo): {' -> '.join(texto_pila) if texto_pila else 'vacía'}")
         
-        # Restaurar la pila
         while not pila_temp.esta_vacia():
             self.pila_escritorios_activos.apilar(pila_temp.desapilar())
         
         return escritorio
     
     def agregar_escritorio(self, escritorio):
-        escritorio.punto_atencion = self  # Asignar el punto al escritorio
+        escritorio.punto_atencion = self  
         self.escritorios.insertar(escritorio)
 
     def obtener_historial_atenciones(self):
@@ -324,7 +308,6 @@ class PuntoAtencion:
         """
         clientes_asignados = 0
         
-        # Verificar si hay escritorios disponibles y clientes en espera
         if self.cola_clientes.esta_vacia():
             return clientes_asignados
         
@@ -333,12 +316,10 @@ class PuntoAtencion:
             if escritorio.esta_disponible() and not self.cola_clientes.esta_vacia():
                 cliente = self.cola_clientes.desencolar()
                 
-                # Calcula tiempo de espera real
                 tiempo_espera = tiempo_actual - cliente.hora_llegada
-                if tiempo_espera < 0:  # Protección contra errores
+                if tiempo_espera < 0: 
                     tiempo_espera = 0
                     
-                # Registra estadísticas de espera
                 self.tiempo_total_espera += tiempo_espera
                 self.clientes_atendidos += 1
                 
