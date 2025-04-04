@@ -204,11 +204,14 @@ class PuntoAtencion:
         return False
     
     def encolar_cliente(self, cliente):
-        cliente.hora_llegada = 0 
         self.cola_clientes.encolar(cliente)
         return len(self.cola_clientes) 
     
-    def asignar_clientes(self):
+    def asignar_clientes(self, tiempo_actual=0):
+        """
+        Asigna clientes a escritorios disponibles.
+        Ahora recibe el tiempo actual para calcular tiempos de espera.
+        """
         clientes_asignados = 0
         
         # Verificar si hay escritorios disponibles y clientes en espera
@@ -220,8 +223,12 @@ class PuntoAtencion:
             if escritorio.esta_disponible() and not self.cola_clientes.esta_vacia():
                 cliente = self.cola_clientes.desencolar()
                 
+                # Calcular tiempo de espera real
+                tiempo_espera = tiempo_actual - cliente.hora_llegada
+                if tiempo_espera < 0:  # Protección contra errores
+                    tiempo_espera = 0
+                    
                 # Registrar estadísticas de espera
-                tiempo_espera = 0  
                 self.tiempo_total_espera += tiempo_espera
                 self.clientes_atendidos += 1
                 
@@ -256,29 +263,35 @@ class PuntoAtencion:
         
         return False
     
-    def simular_actividad(self):
-        """
-        Simula la atención de todos los clientes pendientes.
-        """
-        self.asignar_clientes()
-        
-        iteraciones = 0
-        clientes_atendidos_total = 0
-        
-        while not self.cola_clientes.esta_vacia() or self._hay_escritorios_ocupados():
-            # Avanzar 1 minuto en todos los escritorios ocupados
-            for escritorio in self.escritorios:
-                if escritorio.estado == EscritorioServicio.OCUPADO:
-                    escritorio.actualizar_tiempo(1)
+    def simular_actividad(self, tiempo_inicial=0):
+            """
+            Simula la atención de todos los clientes pendientes.
+            Ahora recibe el tiempo inicial para cálculos de espera.
+            """
+            # Primero asignar clientes disponibles con el tiempo actual
+            self.asignar_clientes(tiempo_inicial)
             
-            # Asigna nuevos clientes si hay escritorios disponibles
-            self.asignar_clientes()
+            tiempo_actual = tiempo_inicial
+            iteraciones = 0
+            clientes_atendidos_total = 0
             
-            iteraciones += 1
-            if iteraciones > 1000: # Evitar bucle infinito
-                break
-        
-        return clientes_atendidos_total
+            while not self.cola_clientes.esta_vacia() or self._hay_escritorios_ocupados():
+                # Avanzar 1 minuto en todos los escritorios ocupados
+                for escritorio in self.escritorios:
+                    if escritorio.estado == EscritorioServicio.OCUPADO:
+                        escritorio.actualizar_tiempo(1)
+                
+                # Avanzar el tiempo de simulación
+                tiempo_actual += 1
+                
+                # Asigna nuevos clientes si hay escritorios disponibles
+                self.asignar_clientes(tiempo_actual)
+                
+                iteraciones += 1
+                if iteraciones > 1000: # Evitar bucle infinito
+                    break
+            
+            return clientes_atendidos_total
     
     def _hay_escritorios_ocupados(self):
         for escritorio in self.escritorios:
