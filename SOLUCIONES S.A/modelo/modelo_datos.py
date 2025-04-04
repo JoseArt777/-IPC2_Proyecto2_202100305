@@ -20,7 +20,7 @@ class EscritorioServicio:
     ACTIVO = 1
     OCUPADO = 2
     
-    def __init__(self, id_escritorio, identificacion, encargado):
+    def __init__(self, id_escritorio, identificacion, encargado, punto_atencion=None):
         self.id = id_escritorio
         self.identificacion = identificacion
         self.encargado = encargado
@@ -28,6 +28,8 @@ class EscritorioServicio:
         self.cliente_actual = None
         self.tiempo_restante = 0
         self.pendiente_desactivar = False 
+        self.punto_atencion = punto_atencion  # Referencia al punto de atención
+
 
         
         # Estadística
@@ -71,6 +73,17 @@ class EscritorioServicio:
     def completar_atencion(self):
         if self.cliente_actual:
             tiempo_total = self.cliente_actual.calcular_tiempo_total()
+            
+            # Registrar la atención en el historial del punto
+            if self.punto_atencion:
+                info_atencion = {
+                    "nombre_cliente": self.cliente_actual.nombre,
+                    "tiempo_atencion": tiempo_total,
+                    "id_escritorio": self.id,
+                    "identificacion_escritorio": self.identificacion
+                }
+                self.punto_atencion.historial_atenciones.insertar(info_atencion)
+            
             self.clientes_atendidos += 1
             self.tiempo_total_atencion += tiempo_total
             self.tiempo_min_atencion = min(self.tiempo_min_atencion, tiempo_total)
@@ -87,7 +100,6 @@ class EscritorioServicio:
             
             return True
         return False
-
     
     def esta_disponible(self):
         return self.estado == self.ACTIVO and self.cliente_actual is None
@@ -120,75 +132,174 @@ class PuntoAtencion:
         self.cola_clientes = Cola()
         self.pila_escritorios_activos = Pila()  
         self.siguiente_indice_activar = 0 
+        self.historial_atenciones = ListaEnlazada()  
 
 
-        # Estadísticas (no cambian)
+
+        # Estadísticas 
         self.tiempo_total_espera = 0
         self.tiempo_min_espera = float('inf')
         self.tiempo_max_espera = 0
         self.clientes_atendidos = 0
 
     def activar_escritorio_auto(self):
+        """
+        Activa escritorios comenzando desde el primero hacia el último.
+        Mantiene la pila ordenada con el mayor índice en el tope.
+        """
         num_escritorios = len(self.escritorios)
-        contador = 0
-
-        # Intenta activar escritorios comenzando desde el siguiente índice
-        while contador < num_escritorios:
-            indice_actual = (self.siguiente_indice_activar + contador) % num_escritorios
-            escritorio = self.escritorios.obtener(indice_actual)
-
-            if escritorio.estado == escritorio.INACTIVO and not escritorio.pendiente_desactivar:
+        if num_escritorios == 0:
+            return None
+        
+        # Imprimir estado inicial de escritorios
+        print("Estado de escritorios antes de activar:")
+        for idx in range(num_escritorios):
+            escritorio = self.escritorios.obtener(idx)
+            estado = "Inactivo" if escritorio.estado == escritorio.INACTIVO else "Activo" if escritorio.estado == escritorio.ACTIVO else "Ocupado"
+            print(f"Escritorio[{idx}] {escritorio.identificacion}: {estado}")
+        
+        # Encontrar el primer escritorio inactivo desde el inicio
+        for idx in range(num_escritorios):
+            escritorio = self.escritorios.obtener(idx)
+            if escritorio and escritorio.estado == escritorio.INACTIVO and not escritorio.pendiente_desactivar:
                 if escritorio.activar():
+                    # Apilar el escritorio que acabamos de activar
                     self.pila_escritorios_activos.apilar(escritorio)
+                    print(f"Escritorio {escritorio.identificacion} (índice {idx}) activado y apilado")
+                    
+                    # Reordenar la pila para mantener el orden por índice
+                    pila_temp = Pila()
+                    escritorios_con_indice = []
+                    
+                    while not self.pila_escritorios_activos.esta_vacia():
+                        e = self.pila_escritorios_activos.desapilar()
+                        # Buscar su índice en la lista
+                        for i in range(num_escritorios):
+                            if self.escritorios.obtener(i).id == e.id:
+                                escritorios_con_indice.append((i, e))
+                                break
+                    
+                    # Ordenar por índice (menor a mayor)
+                    escritorios_con_indice.sort(key=lambda x: x[0])
+                    
+                    # Apilar en orden para que mayor índice quede arriba
+                    for i, e in escritorios_con_indice:
+                        self.pila_escritorios_activos.apilar(e)
+                    
+                    # Mostrar estado actual de la pila
+                    pila_temp = Pila()
+                    texto_pila = []
+                    while not self.pila_escritorios_activos.esta_vacia():
+                        e = self.pila_escritorios_activos.desapilar()
+                        texto_pila.append(f"{e.identificacion}")
+                        pila_temp.apilar(e)
+                    print(f"Estado de la pila (tope -> fondo): {' -> '.join(texto_pila)}")
+                    
+                    # Restaurar la pila
+                    while not pila_temp.esta_vacia():
+                        self.pila_escritorios_activos.apilar(pila_temp.desapilar())
+                    
                     self.asignar_clientes()
-                    self.siguiente_indice_activar = (indice_actual + 1) % num_escritorios
                     return escritorio
-            contador += 1
-
+        
         return None
-
-
-
     def desactivar_escritorio_auto(self):
         """
-        Desactiva el último escritorio activado (LIFO)
+        Desactiva el último escritorio activado (LIFO) usando la pila.
+        Asegura que el escritorio de mayor índice (Escritorio 2) siempre esté en el tope.
         """
+        print("Estado de escritorios antes de desactivar:")
+        for idx in range(len(self.escritorios)):
+            escritorio = self.escritorios.obtener(idx)
+            estado = "Inactivo" if escritorio.estado == escritorio.INACTIVO else "Activo" if escritorio.estado == escritorio.ACTIVO else "Ocupado"
+            print(f"Escritorio[{idx}] {escritorio.identificacion}: {estado}")
+        
+        # Si la pila está vacía pero hay escritorios activos, inicializar la pila
         if self.pila_escritorios_activos.esta_vacia():
-            for escritorio in self.escritorios:
-                if escritorio.estado == escritorio.ACTIVO or escritorio.estado == escritorio.OCUPADO:
-                    escritorio.desactivar()
-                    return escritorio
-            return None  
-
-        temp_pila = Pila()
-        escritorio_desactivado = None
-
-        # Buscar el primer escritorio que se pueda desactivar (LIFO)
+            print("La pila está vacía, inicializándola...")
+            
+            # Recolectar escritorios activos con su índice
+            escritorios_con_indice = []
+            for idx in range(len(self.escritorios)):
+                escritorio = self.escritorios.obtener(idx)
+                if escritorio and (escritorio.estado == escritorio.ACTIVO or escritorio.estado == escritorio.OCUPADO):
+                    escritorios_con_indice.append((idx, escritorio))
+                    print(f"Agregando a lista: Escritorio {escritorio.identificacion} (índice {idx})")
+            
+            # Ordenar explícitamente por índice (menor a mayor)
+            escritorios_con_indice.sort(key=lambda x: x[0])
+            
+            # Apilar en orden de índice para que el mayor quede arriba
+            for idx, escritorio in escritorios_con_indice:
+                self.pila_escritorios_activos.apilar(escritorio)
+                print(f"Apilando: Escritorio {escritorio.identificacion} (índice {idx})")
+            
+            # Mostrar estado actual de la pila
+            pila_temp = Pila()
+            texto_pila = []
+            while not self.pila_escritorios_activos.esta_vacia():
+                e = self.pila_escritorios_activos.desapilar()
+                texto_pila.append(f"{e.identificacion}")
+                pila_temp.apilar(e)
+            print(f"Estado de la pila (tope -> fondo): {' -> '.join(texto_pila)}")
+            
+            # Restaurar la pila
+            while not pila_temp.esta_vacia():
+                self.pila_escritorios_activos.apilar(pila_temp.desapilar())
+        
+        # Si no hay escritorios activos, retornar None
+        if self.pila_escritorios_activos.esta_vacia():
+            print("No hay escritorios para desactivar")
+            return None
+        
+        # Desapilar el tope de la pila
+        escritorio = self.pila_escritorios_activos.desapilar()
+        print(f"Desapilado: Escritorio {escritorio.identificacion}, Estado: {escritorio.estado}")
+        
+        # Si el escritorio ya está inactivo, buscar otro en la pila
+        if escritorio.estado == escritorio.INACTIVO:
+            print(f"El escritorio {escritorio.identificacion} ya está inactivo, buscando otro")
+            if not self.pila_escritorios_activos.esta_vacia():
+                return self.desactivar_escritorio_auto()
+            return None
+        
+        # Desactivar el escritorio
+        escritorio.desactivar()
+        print(f"Desactivando: Escritorio {escritorio.identificacion}")
+        
+        # Si quedó pendiente de desactivar, volver a apilarlo
+        if escritorio.pendiente_desactivar:
+            self.pila_escritorios_activos.apilar(escritorio)
+            print(f"El escritorio {escritorio.identificacion} quedó pendiente, volviendo a apilar")
+        
+        # Mostrar estado actual de la pila después de desactivar
+        pila_temp = Pila()
+        texto_pila = []
         while not self.pila_escritorios_activos.esta_vacia():
-            escritorio = self.pila_escritorios_activos.desapilar()
-            
-            if escritorio.estado == escritorio.INACTIVO:
-                continue
-                
-            # Si se puede desactivar desactiva el escritorio
-            escritorio.desactivar() 
-            escritorio_desactivado = escritorio
-            break
-            
-        # Reconstruir la pila con los escritorios que no desactivamos
-        while not temp_pila.esta_vacia():
-            self.pila_escritorios_activos.apilar(temp_pila.desapilar())
-            
-        if escritorio_desactivado is None:
-            for escritorio in self.escritorios:
-                if escritorio.estado == escritorio.ACTIVO or escritorio.estado == escritorio.OCUPADO:
-                    escritorio.desactivar()
-                    return escritorio
-                    
-        return escritorio_desactivado
+            e = self.pila_escritorios_activos.desapilar()
+            texto_pila.append(f"{e.identificacion}")
+            pila_temp.apilar(e)
+        print(f"Estado de la pila después (tope -> fondo): {' -> '.join(texto_pila) if texto_pila else 'vacía'}")
+        
+        # Restaurar la pila
+        while not pila_temp.esta_vacia():
+            self.pila_escritorios_activos.apilar(pila_temp.desapilar())
+        
+        return escritorio
     
     def agregar_escritorio(self, escritorio):
+        escritorio.punto_atencion = self  # Asignar el punto al escritorio
         self.escritorios.insertar(escritorio)
+
+    def obtener_historial_atenciones(self):
+        """
+        Retorna una lista con mensajes del historial de atenciones.
+        """
+        mensajes = []
+        for info in self.historial_atenciones:
+            mensaje = f"Cliente {info['nombre_cliente']}: atendido {info['tiempo_atencion']} minutos en escritorio {info['identificacion_escritorio']}"
+            mensajes.append(mensaje)
+        return mensajes
     
     def activar_escritorio(self, id_escritorio):
         for escritorio in self.escritorios:

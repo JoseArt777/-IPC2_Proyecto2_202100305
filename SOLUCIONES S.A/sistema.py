@@ -82,10 +82,14 @@ class SistemaAtencion:
         dot_escritorios = self.generar_dot_escritorios()
         dot_cola = self.generar_dot_cola()
         
+        # Obtener historial de atenciones
+        historial_atenciones = self.punto_actual.obtener_historial_atenciones()
+        
         return True, {
             "estadisticas": stats,
             "dot_escritorios": dot_escritorios,
-            "dot_cola": dot_cola
+            "dot_cola": dot_cola,
+            "historial_atenciones": historial_atenciones
         }
     
     def activar_escritorio_auto(self):

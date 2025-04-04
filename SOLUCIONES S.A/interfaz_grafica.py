@@ -519,18 +519,51 @@ class VentanaPrincipal:
             messagebox.showwarning("Advertencia", "Por favor, seleccione un punto de atención.")
             return
         
-        # Obtiene estado
+        # Obtener estado
         resultado, datos = self.sistema.ver_estado_punto()
         if not resultado:
             messagebox.showerror("Error", datos)
             return
         
-        # Actualiza estadísticas
+        # Actualizar estadísticas
         stats = datos["estadisticas"]
         self.mostrar_estadisticas(stats)
         
+        # Generar y mostrar diagramas
         self.generar_diagrama_escritorios(datos["dot_escritorios"])
         self.generar_diagrama_cola(datos["dot_cola"])
+        
+        # Mostrar historial de atenciones si existe
+        if "historial_atenciones" in datos and datos["historial_atenciones"]:
+            self.mostrar_historial_atenciones(datos["historial_atenciones"])
+
+    def mostrar_historial_atenciones(self, historial):
+        """
+        Muestra el historial de atenciones en una ventana emergente.
+        """
+        if not historial:
+            return
+        
+        # Crear ventana emergente
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Historial de Atenciones")
+        dialog.geometry("500x300")
+        dialog.grab_set()  # Modal
+        
+        # Añadir texto para mostrar el historial
+        text = tk.Text(dialog, wrap=tk.WORD)
+        text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Insertar encabezado
+        text.insert(tk.END, "HISTORIAL DE ATENCIONES\n")
+        text.insert(tk.END, "=" * 50 + "\n\n")
+        
+        # Insertar cada registro del historial
+        for mensaje in historial:
+            text.insert(tk.END, f"{mensaje}\n")
+        
+        # Botón para cerrar
+        ttk.Button(dialog, text="Cerrar", command=dialog.destroy).pack(pady=10)
     
     def mostrar_estadisticas(self, stats):
         """
