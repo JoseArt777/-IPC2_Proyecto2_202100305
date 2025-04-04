@@ -31,7 +31,7 @@ class ProcesadorXML:
                         nombre_punto = punto_elem.find('nombre').text.strip()
                         direccion = punto_elem.find('direccion').text.strip()
                         
-                        # Crear punto de atención
+                        # Crea punto de atención
                         punto = PuntoAtencion(id_punto, nombre_punto, direccion)
                         
                         escritorios_elem = punto_elem.find('listaEscritorios')
@@ -41,7 +41,7 @@ class ProcesadorXML:
                                 identificacion = escritorio_elem.find('identificacion').text.strip()
                                 encargado = escritorio_elem.find('encargado').text.strip()
                                 
-                                # Crear escritorio
+                                # Crea escritorio
                                 escritorio = EscritorioServicio(id_escritorio, identificacion, encargado)
                                 punto.agregar_escritorio(escritorio)
                         
@@ -54,11 +54,11 @@ class ProcesadorXML:
                         nombre_transaccion = transaccion_elem.find('nombre').text.strip()
                         tiempo_atencion = int(transaccion_elem.find('tiempoAtencion').text)
                         
-                        # Crear transacción
+                        # Crea transacción
                         transaccion = Transaccion(id_transaccion, nombre_transaccion, tiempo_atencion)
                         empresa.agregar_transaccion(transaccion)
                 
-                # Agregar empresa al sistema
+                # Agregamos empresa al sistema
                 self.sistema.agregar_empresa(empresa)
             
             return True, f"Archivo de configuración cargado correctamente. Se agregaron {len(root.findall('empresa'))} empresas."
@@ -116,12 +116,12 @@ class ProcesadorXML:
                                 id_transaccion = trans_elem.get('idTransaccion')
                                 cantidad = int(trans_elem.get('cantidad', 1))
                                 
-                                # Obtener transacción de la empresa
+                                # otiene transacción de la empresa
                                 transaccion = empresa.obtener_transaccion(id_transaccion)
                                 if transaccion:
                                     cliente.agregar_transaccion(transaccion, cantidad)
                         
-                        # Encolar cliente en el punto de atención
+                        # Encola cliente en el punto de atención
                         punto.encolar_cliente(cliente)
                 
                 configuraciones_cargadas += 1

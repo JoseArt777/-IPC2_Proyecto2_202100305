@@ -1,7 +1,7 @@
 import sys
 import os
 
-# se agrega la ruta del directorio actual
+# ruta directorio actual
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import tkinter as tk

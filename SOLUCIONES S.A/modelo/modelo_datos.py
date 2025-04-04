@@ -8,12 +8,13 @@ class Transaccion:
     def __init__(self, id_transaccion, nombre, tiempo_atencion):
         self.id = id_transaccion
         self.nombre = nombre
-        self.tiempo_atencion = tiempo_atencion  # en minutos
+        self.tiempo_atencion = tiempo_atencion 
+        # el tiempo está en minutos
     
     def __str__(self):
         return f"Transaccion[{self.id}]: {self.nombre} ({self.tiempo_atencion} min)"
 
-# Clase para escritorio de servicio
+#  escritorio de servicio
 class EscritorioServicio:
     INACTIVO = 0
     ACTIVO = 1
@@ -26,7 +27,7 @@ class EscritorioServicio:
         self.estado = self.INACTIVO
         self.cliente_actual = None
         self.tiempo_restante = 0
-        self.pendiente_desactivar = False  # Añadir esta línea
+        self.pendiente_desactivar = False 
 
         
         # Estadística
@@ -109,7 +110,6 @@ class EscritorioServicio:
             
         return f"Escritorio[{self.id}]: {self.identificacion} ({estado_str}) - Cliente: {cliente_str}"
 
-# Clase punto de atención
 
 class PuntoAtencion:
     def __init__(self, id_punto, nombre, direccion):
@@ -170,8 +170,8 @@ class PuntoAtencion:
             if escritorio.estado == escritorio.INACTIVO:
                 continue
                 
-            # Si se puede desactivar
-            escritorio.desactivar()  # desactivar el escritorio
+            # Si se puede desactivar desactiva el escritorio
+            escritorio.desactivar() 
             escritorio_desactivado = escritorio
             break
             
@@ -179,7 +179,6 @@ class PuntoAtencion:
         while not temp_pila.esta_vacia():
             self.pila_escritorios_activos.apilar(temp_pila.desapilar())
             
-        # Si no encontramos ningún escritorio para desactivar, busquemos uno manualmente
         if escritorio_desactivado is None:
             for escritorio in self.escritorios:
                 if escritorio.estado == escritorio.ACTIVO or escritorio.estado == escritorio.OCUPADO:
@@ -223,12 +222,12 @@ class PuntoAtencion:
             if escritorio.esta_disponible() and not self.cola_clientes.esta_vacia():
                 cliente = self.cola_clientes.desencolar()
                 
-                # Calcular tiempo de espera real
+                # Calcula tiempo de espera real
                 tiempo_espera = tiempo_actual - cliente.hora_llegada
                 if tiempo_espera < 0:  # Protección contra errores
                     tiempo_espera = 0
                     
-                # Registrar estadísticas de espera
+                # Registra estadísticas de espera
                 self.tiempo_total_espera += tiempo_espera
                 self.clientes_atendidos += 1
                 
@@ -238,7 +237,7 @@ class PuntoAtencion:
                 if tiempo_espera > self.tiempo_max_espera:
                     self.tiempo_max_espera = tiempo_espera
                 
-                # Asignar cliente al escritorio
+                # Asigna cliente al escritorio
                 escritorio.asignar_cliente(cliente)
                 clientes_asignados += 1
         
@@ -246,7 +245,7 @@ class PuntoAtencion:
     
     def atender_cliente(self):
      
-        # Buscar el escritorio con menor tiempo restante
+        # Buscamos el escritorio con menor tiempo restante
         escritorio_min = None
         tiempo_min = float('inf')
         
@@ -255,7 +254,7 @@ class PuntoAtencion:
                 escritorio_min = escritorio
                 tiempo_min = escritorio.tiempo_restante
         
-        # Si encontramos un escritorio ocupado, completar la atención
+        # Si encontramos un escritorio ocupado, completamos la atención
         if escritorio_min:
             escritorio_min.completar_atencion()
             self.asignar_clientes()
@@ -268,7 +267,6 @@ class PuntoAtencion:
             Simula la atención de todos los clientes pendientes.
             Ahora recibe el tiempo inicial para cálculos de espera.
             """
-            # Primero asignar clientes disponibles con el tiempo actual
             self.asignar_clientes(tiempo_inicial)
             
             tiempo_actual = tiempo_inicial
@@ -276,19 +274,17 @@ class PuntoAtencion:
             clientes_atendidos_total = 0
             
             while not self.cola_clientes.esta_vacia() or self._hay_escritorios_ocupados():
-                # Avanzar 1 minuto en todos los escritorios ocupados
                 for escritorio in self.escritorios:
                     if escritorio.estado == EscritorioServicio.OCUPADO:
                         escritorio.actualizar_tiempo(1)
                 
-                # Avanzar el tiempo de simulación
                 tiempo_actual += 1
                 
                 # Asigna nuevos clientes si hay escritorios disponibles
                 self.asignar_clientes(tiempo_actual)
                 
                 iteraciones += 1
-                if iteraciones > 1000: # Evitar bucle infinito
+                if iteraciones > 1000: 
                     break
             
             return clientes_atendidos_total
@@ -316,7 +312,7 @@ class PuntoAtencion:
         if self.clientes_atendidos > 0:
             tiempo_promedio_espera = self.tiempo_total_espera / self.clientes_atendidos
         
-        # Cálculo de tiempos de atención
+        # calculos tiempos de atención
         tiempo_total_atencion = 0
         tiempo_min_atencion = float('inf')
         tiempo_max_atencion = 0

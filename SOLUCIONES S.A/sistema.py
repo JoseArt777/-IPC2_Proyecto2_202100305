@@ -97,7 +97,6 @@ class SistemaAtencion:
             return True, f"Escritorio '{escritorio.identificacion}' activado automáticamente."
         return False, "No hay escritorios disponibles para activar."
 
-    # En sistema.py
     def desactivar_escritorio_auto(self):
         if not self.punto_actual:
             return False, "Selecciona un punto de atención primero."
@@ -128,11 +127,11 @@ class SistemaAtencion:
         if not self.punto_actual or not self.empresa_actual:
             return False, "Debe seleccionar un punto de atención primero."
         
-        # Crear cliente
+        # Crea cliente
         from modelo import Cliente
         cliente = Cliente(dpi, nombre)
         
-        # Agregar transacciones
+        # Agrega transacciones
         tiempo_total = 0
         for id_transaccion, cantidad in transacciones:
             transaccion = self.empresa_actual.obtener_transaccion(id_transaccion)
@@ -140,13 +139,12 @@ class SistemaAtencion:
                 cliente.agregar_transaccion(transaccion, cantidad)
                 tiempo_total += transaccion.tiempo_atencion * cantidad
         
-        # Encolar cliente
+        # Encola cliente
         posicion = self.punto_actual.encolar_cliente(cliente)
         
-        # Intentar asignar clientes
+        # Intenta asignar clientes
         self.punto_actual.asignar_clientes()
         
-        # Estimar tiempo de espera (lógica simplificada)
         tiempo_espera = self.estimar_tiempo_espera(cliente)
         
         return True, {
@@ -170,18 +168,15 @@ class SistemaAtencion:
                 escritorios_activos += 1
         
         if escritorios_activos == 0:
-            return float('inf')  # No hay escritorios activos
+            return float('inf') 
         
-        # Buscar la posición del cliente en la cola
         posicion = 0
         for i, cliente_cola in enumerate(self.punto_actual.cola_clientes):
             if cliente_cola == cliente:
                 posicion = i
                 break
         
-        # Estimar tiempo basado en posición y escritorios activos
-        # Esta es una estimación muy básica
-        return posicion * 5  # 5 minutos por cliente en promedio
+        return posicion * 5 
     
     def simular_actividad(self):
         """
@@ -235,7 +230,6 @@ class SistemaAtencion:
             etiqueta = f"{escritorio.identificacion}\\nEstado: {estado}\\n{cliente_info}{tiempos_info}"
             dot.node(f'escritorio{idx}', etiqueta, style='filled', fillcolor=color)
 
-            # Conexión desde el punto al escritorio
             dot.edge('punto', f'escritorio{idx}')
 
         return dot.source
@@ -267,17 +261,7 @@ class SistemaAtencion:
         
         return dot.source
     def guardar_tablas_estadisticas(self, directorio="reportes"):
-        """
-        Genera tablas estadísticas con Graphviz que siguen exactamente el formato
-        de las imágenes de referencia y las guarda como archivos de imagen en 
-        el directorio especificado, sobrescribiendo archivos anteriores.
-        
-        Args:
-            directorio (str): Directorio donde se guardarán las imágenes. Si no existe, se creará.
-        
-        Returns:
-            tuple: (bool, str) - (éxito, mensaje)
-        """
+
         if not self.punto_actual:
             return False, "Debe seleccionar un punto de atención primero."
         
@@ -291,11 +275,10 @@ class SistemaAtencion:
             # Generar tabla similar a la referencia exacta
             import graphviz
             
-            # TABLA 1: Estado del punto de atención (Imagen 1 y 2)
+            # tabla 1: Estado del punto de atención (Imagen 1 y 2)
             dot_estado = graphviz.Digraph(comment='Estado del Punto de Atención')
             dot_estado.attr(rankdir='TB')
             
-            # Título principal con fondo celeste
             dot_estado.attr('node', shape='plaintext')
             header = f'''<
             <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" WIDTH="100%">
@@ -306,10 +289,9 @@ class SistemaAtencion:
             >'''
             dot_estado.node('header', header)
             
-            # Obtener estadísticas
             stats = self.punto_actual.obtener_estadisticas()
             
-            # Crear tabla principal de estadísticas (formato exacto de las imágenes)
+            # Crear tabla principal de estadísticas 
             main_table = f'''<
             <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
                 <TR>
@@ -387,15 +369,12 @@ class SistemaAtencion:
             dot_estado.node('main_table', main_table)
             dot_estado.edge('header', 'main_table', style='invis')
             
-            # Tablas para cada escritorio, como en las imágenes
             escritorios_table = f'''<
             <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="20">
                 <TR>'''
             
-            # Añadir cada escritorio activo e inactivo
             for idx, escritorio in enumerate(self.punto_actual.escritorios):
-                # Determinar color de fondo según si es par o impar
-                bg_color = "#FFD6BA" if idx % 2 == 0 else "#F8C8DC"  # Salmón claro o rosa claro
+                bg_color = "#FFD6BA" if idx % 2 == 0 else "#F8C8DC" 
                 
                 tiempo_prom = escritorio.tiempo_promedio_atencion() if escritorio.clientes_atendidos > 0 else 0
                 tiempo_min = escritorio.tiempo_min_atencion if escritorio.tiempo_min_atencion != float('inf') else 0
@@ -433,12 +412,12 @@ class SistemaAtencion:
             dot_estado.node('escritorios_table', escritorios_table)
             dot_estado.edge('main_table', 'escritorios_table', style='invis')
             
-            # Guardar archivo de imagen para Ver Estado (formato 1 y 2)
+            # Guarda archivo de imagen para Ver Estado (formato 1 y 2)
             filename_estado = f"{directorio}/estado_punto_atencion"
             dot_estado.render(filename_estado, format='png', cleanup=True)
             
             
-            # TABLA 3: Simulación de actividad (formato de la imagen 3)
+            # tabla 3: Simulación de actividad (formato de la imagen 3)
             dot_simulacion = graphviz.Digraph(comment='Simulación de Actividad')
             dot_simulacion.attr('node', shape='plaintext')
             
@@ -491,7 +470,7 @@ class SistemaAtencion:
             dot_simulacion.edge('empresa', 'punto')
             dot_simulacion.edge('punto', 'tabla_sim')
             
-            # Añadir escritorios con flechas verdes como en la imagen 3
+            # Añadimos escritorios con flechas verdes como en la imagen 3
             for i, escritorio in enumerate(self.punto_actual.escritorios):
                 if escritorio.estado != escritorio.INACTIVO:
                     tiempo_prom = escritorio.tiempo_promedio_atencion() if escritorio.clientes_atendidos > 0 else 0

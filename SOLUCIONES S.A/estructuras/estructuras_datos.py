@@ -1,11 +1,11 @@
-# Nodo para listas enlazadas
+# nodo para listas enlazadas
 class Nodo:
     def __init__(self, dato=None):
         self.dato = dato
         self.siguiente = None
         self.anterior = None 
 
-# Lista simplemente enlazada
+# lista simplemente enlazada
 class ListaEnlazada:
     def __init__(self):
         self.cabeza = None
@@ -124,7 +124,7 @@ class Pila:
     def __len__(self):
         return self.tamaño
 
-# Tabla Hash  (reemplazamos con esto los diccionarios)
+# Tabla Hash  (en lugar de diccionarios)
 class TablaHash:
     def __init__(self, tamaño=100):
         self.tabla = [None] * tamaño
@@ -132,7 +132,7 @@ class TablaHash:
         self.elementos = 0
     
     def _hash(self, clave):
-        #  para strings y números
+        #  strings y números
         if isinstance(clave, str):
             valor = sum(ord(c) for c in clave)
         else:
