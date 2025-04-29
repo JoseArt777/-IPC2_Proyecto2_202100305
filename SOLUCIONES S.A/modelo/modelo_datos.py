@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from estructuras import ListaEnlazada, Cola, TablaHash, Pila
+from estructuras import ListaEnlazada, Cola, TablaHash, Pila, Nodo
 
 class Transaccion:
     def __init__(self, id_transaccion, nombre, tiempo_atencion):
@@ -298,8 +298,19 @@ class PuntoAtencion:
         return False
     
     def encolar_cliente(self, cliente):
-        self.cola_clientes.encolar(cliente)
-        return len(self.cola_clientes) 
+        if cliente.prioridad:
+            # Insertar al inicio de la cola (prioridad alta)
+            nueva_lista = ListaEnlazada()
+            nuevo_nodo = Nodo(cliente)
+            nuevo_nodo.siguiente = self.cola_clientes.lista.cabeza
+            self.cola_clientes.lista.cabeza = nuevo_nodo
+            if self.cola_clientes.lista.cola is None:
+                self.cola_clientes.lista.cola = nuevo_nodo
+            self.cola_clientes.lista.tamaño += 1
+        else:
+            self.cola_clientes.encolar(cliente)
+        return len(self.cola_clientes)
+
     
     def asignar_clientes(self, tiempo_actual=0):
         """
@@ -470,12 +481,13 @@ class Empresa:
 
 # Clase que representa un cliente
 class Cliente:
-    def __init__(self, dpi, nombre):
+    def __init__(self, dpi, nombre, prioridad="no"):
         self.dpi = dpi
         self.nombre = nombre
-        self.transacciones = ListaEnlazada() 
-        self.hora_llegada = 0 
-    
+        self.transacciones = ListaEnlazada()
+        self.hora_llegada = 0
+        self.prioridad = prioridad.lower() == "si"  # Se guarda como booleano
+
     def agregar_transaccion(self, transaccion, cantidad=1):
         self.transacciones.insertar((transaccion, cantidad))
     
@@ -489,4 +501,5 @@ class Cliente:
         return tiempo_total
     
     def __str__(self):
-        return f"Cliente[{self.dpi}]: {self.nombre}"
+        estado = "PRIORITARIO" if self.prioridad else "Normal"
+        return f"Cliente[{self.dpi}]: {self.nombre} ({estado})"
